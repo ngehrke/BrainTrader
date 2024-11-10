@@ -32,17 +32,16 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.ta4j</groupId>
-            <artifactId>ta4j-core</artifactId>
-            <version>0.17</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.34</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.ib.client</groupId>
-            <artifactId>twsapi</artifactId>
-            <version>9.73.01</version> <!-- Version sollte mit der JAR-Version übereinstimmen -->
-            <scope>system</scope>
-            <systemPath>${project.basedir}/libs/twsapi/twsapi.jar</systemPath>
+            <groupId>org.ta4j</groupId>
+            <artifactId>ta4j-core</artifactId>
+            <version>0.17</version>
         </dependency>
 
         <dependency>
