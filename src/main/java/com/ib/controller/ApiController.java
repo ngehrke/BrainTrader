@@ -428,7 +428,7 @@ public class ApiController implements EWrapper {
 			// TODO Auto-generated method stub
 			
 		} });
-		
+
 		m_client.reqContractDetails(reqId, contract);
 		sendEOM();
 	}

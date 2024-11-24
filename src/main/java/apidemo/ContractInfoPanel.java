@@ -27,6 +27,7 @@ import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.PriceIncrement;
 import com.ib.client.Types.FundamentalType;
+import com.ib.contracts.StkContract;
 import com.ib.controller.ApiController.IContractDetailsHandler;
 import com.ib.controller.ApiController.IFundamentalsHandler;
 import com.ib.controller.ApiController.IMarketRuleHandler;

@@ -42,7 +42,9 @@ public class BrainConnectionHandler implements ApiController.IConnectionHandler 
 
     @Override
     public void connected() {
+
         this.connected=true;
+
     }
 
     @Override
