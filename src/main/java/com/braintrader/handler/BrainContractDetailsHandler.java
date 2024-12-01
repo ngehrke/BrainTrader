@@ -1,4 +1,4 @@
-package com.braintrader;
+package com.braintrader.handler;
 
 import com.ib.client.ContractDetails;
 import com.ib.controller.ApiController;
