@@ -7,6 +7,7 @@ import jep.SharedInterpreter;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,7 +54,7 @@ class JepTest {
 
                 // Abrufen des Dictionaries in Java
                 @SuppressWarnings("unchecked")
-                Map<String, Double> dataDict = (Map<String, Double>) interp.getValue("data_dict");
+                HashMap<String, Double> dataDict = (HashMap<String, Double>) interp.getValue("data_dict");
 
                 // Übertragen der Daten in die Java-Map
                 stockPrices.putAll(dataDict);
