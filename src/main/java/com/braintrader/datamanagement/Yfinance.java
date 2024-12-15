@@ -58,7 +58,7 @@ public class Yfinance {
             String sqlPrices= """
                     CREATE TABLE IF NOT EXISTS price (
                         symbol VARCHAR(255) NOT NULL, -- Das Ticker-Symbol, kein NULL-Wert erlaubt
-                        date DATE NOT NULL, -- Das Datum des Preises im YYYY-MM-DD-Format, kein NULL-Wert erlaubt
+                        pricedate DATE NOT NULL, -- Das Datum des Preises im YYYY-MM-DD-Format, kein NULL-Wert erlaubt
                         currency VARCHAR(10), -- Die Währung des Preises (z. B. USD, EUR)
                         open DOUBLE, -- Eröffnungskurs
                         close DOUBLE, -- Schlusskurs
@@ -66,11 +66,23 @@ public class Yfinance {
                         low DOUBLE, -- Tiefstkurs
                         adjClose DOUBLE, -- Angepasster Schlusskurs
                         volume BIGINT, -- Handelsvolumen
-                        PRIMARY KEY (symbol, date) -- Primärschlüssel aus Symbol und Datum
+                        PRIMARY KEY (symbol, pricedate) -- Primärschlüssel aus Symbol und Datum
                     );
                     """;
 
             statement.execute(sqlPrices);
+
+            String sqlCompanyInfo = """
+                    CREATE TABLE IF NOT EXISTS company_info (
+                        symbol VARCHAR(255) NOT NULL, -- Das Ticker-Symbol, kein NULL-Wert erlaubt
+                        property VARCHAR(512) NOT NULL, -- Die Eigenschaft des Unternehmens, kein NULL-Wert erlaubt
+                        val VARCHAR, -- Der Wert der Eigenschaft
+                        ts_entry TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel des Eintrags
+                        PRIMARY KEY (symbol, property) -- Primärschlüssel aus Symbol und Eigenschaft
+                    );
+                    """;
+
+            statement.execute(sqlCompanyInfo);
 
 
         }
@@ -87,8 +99,8 @@ public class Yfinance {
         Set<String> symbols = new HashSet<>();
 
         String sql = """
-            MERGE INTO price (symbol, date, currency, open, close, high, low, adjClose, volume)
-            KEY (symbol, date)
+            MERGE INTO price (symbol, pricedate, currency, open, close, high, low, adjClose, volume)
+            KEY (symbol, pricedate)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
@@ -185,6 +197,201 @@ public class Yfinance {
         }
 
         logger.accept("yfinance closed");
+
+    }
+
+    public void updateAllStockInfosInDatabase() throws YfinanceException {
+
+        Set<String> symbols = new LinkedHashSet<>();
+
+        try (Statement statement = this.con.createStatement()) {
+
+            try (var rs = statement.executeQuery("SELECT DISTINCT symbol FROM price ORDER BY symbol ")) {
+
+                while (rs.next()) {
+                    symbols.add(rs.getString(1));
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting symbols from database: "+e.getMessage(), e);
+        }
+
+        for (String symbol : symbols) {
+
+            try {
+
+                log("Updating info for "+symbol);
+
+                Map<String, String> stockInfo = this.getStockInfo(symbol);
+                this.saveStockInfo(symbol,stockInfo);
+
+                Thread.sleep(200);
+
+            } catch (YfinanceException e) {
+
+                logger.accept("Error updating info for "+symbol+": "+e.getMessage());
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+        }
+
+    }
+
+    public void updateAllStockPricesInDatabase() throws YfinanceException {
+
+        Set<String> symbols = new LinkedHashSet<>();
+
+        try (Statement statement = this.con.createStatement()) {
+
+            try (var rs = statement.executeQuery("SELECT DISTINCT symbol FROM price ORDER BY symbol")) {
+
+                while (rs.next()) {
+                    symbols.add(rs.getString(1));
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting symbols from database: "+e.getMessage(), e);
+        }
+
+        for (String symbol : symbols) {
+
+            try {
+
+                log("Updating prices for "+symbol);
+
+                Map<LocalDate, Price> prices = this.updatePrices(symbol);
+                this.savePrices(prices);
+
+                Thread.sleep(1000);
+
+            } catch (YfinanceException e) {
+
+                logger.accept("Error updating prices for "+symbol+": "+e.getMessage());
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+        }
+
+    }
+
+    // gets the latest prices for a stock
+    protected Map<LocalDate,Price> updatePrices(String tickerSymbol) throws YfinanceException {
+
+        Map<LocalDate, Price> result = new HashMap<>();
+
+        // get the latest price entry in table price
+        String sql = """
+            SELECT MAX(pricedate) FROM price WHERE symbol = ?
+            """;
+
+        LocalDate lastDate = null;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, tickerSymbol);
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    lastDate = rs.getDate(1).toLocalDate();
+
+                } else {
+                    return result;
+                }
+
+            }
+
+        } catch (SQLException e) {
+            logger.accept("Error getting latest price date for "+tickerSymbol+": "+e.getMessage());
+        }
+
+        result= this.getStockPrices(tickerSymbol, lastDate, LocalDate.now());
+
+        return result;
+
+
+    }
+
+    public void getAndSaveStockPricesInDatabase(String tickerSymbol, LocalDate startDate, LocalDate endDate) throws YfinanceException {
+
+        Map<LocalDate, Price> prices = this.getStockPrices(tickerSymbol, startDate, endDate);
+        this.savePrices(prices);
+
+    }
+
+    public void getAndSaveStockInfoInDatabase(String tickerSymbol) throws YfinanceException {
+
+        Map<String, String> stockInfo = this.getStockInfo(tickerSymbol);
+        this.saveStockInfo(tickerSymbol,stockInfo);
+
+    }
+
+    public void saveStockInfo(String tickerSymbol, Map<String,String> stockInfoMap) throws YfinanceException  {
+
+            if (tickerSymbol == null) {
+                throw new YfinanceException("Ticker symbol must not be null");
+            }
+
+            if (stockInfoMap == null) {
+                throw new YfinanceException("Stock info map must not be null");
+            }
+
+            String sql = """
+                MERGE INTO company_info (symbol, property, val, ts_entry )
+                KEY (symbol, property)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                for (Map.Entry<String, String> entry : stockInfoMap.entrySet()) {
+
+                    preparedStatement.setString(1, tickerSymbol);
+                    preparedStatement.setString(2, entry.getKey());
+                    preparedStatement.setString(3, entry.getValue());
+
+                    preparedStatement.addBatch();
+
+                }
+
+                preparedStatement.executeBatch();
+
+            } catch (SQLException e) {
+                logger.accept("Error saving stock info to database: "+e.getMessage());
+            }
+    }
+
+    public Map<String,String> getStockInfo(String tickerSymbol) throws YfinanceException {
+
+        Map<String,String> result = new HashMap<>();
+
+        try (Interpreter interp = new SharedInterpreter()) {
+
+            interp.exec("import yfinance as yf");
+            interp.set("ticker", tickerSymbol);
+            interp.exec("stock = yf.Ticker(ticker)");
+            interp.exec("info = stock.info");
+            interp.exec("result = {key: str(info[key]) for key in info.keys()}");
+
+            @SuppressWarnings("unchecked")
+            HashMap<String, String> info = (HashMap<String, String>) interp.getValue("result");
+
+            result.putAll(info);
+
+        } catch (Exception e) {
+            throw new YfinanceException("Error getting stock info: "+e.getMessage(), e);
+        }
+
+        return result;
 
     }
 

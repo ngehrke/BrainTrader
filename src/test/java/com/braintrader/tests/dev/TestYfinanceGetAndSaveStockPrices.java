@@ -1,6 +1,5 @@
 package com.braintrader.tests.dev;
 
-import com.braintrader.datamanagement.Price;
 import com.braintrader.datamanagement.Yfinance;
 import com.braintrader.exceptions.YfinanceException;
 import org.junit.jupiter.api.Test;
@@ -11,12 +10,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-class TestYfinance {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class TestYfinanceGetAndSaveStockPrices {
 
     @Test
     void testYfinance() throws YfinanceException, InterruptedException {
 
-        Map<String,String> companies = getDax30Companies();
+        Map<String,String> companies = getCryptocurrencies();
 
         Set<String> symbols = companies.keySet();
 
@@ -28,14 +29,124 @@ class TestYfinance {
 
             System.out.println("Getting prices for " + symbol + " (" + companies.get(symbol) + ")");
 
-            Map<LocalDate, Price> prices = yFinance.getStockPrices(symbol, startDate, LocalDate.now());
-            yFinance.savePrices(prices);
+            yFinance.getAndSaveStockPricesInDatabase(symbol, startDate,LocalDate.now());
 
-            Thread.sleep(10000);
+            Thread.sleep(5000);
 
         }
 
         yFinance.close();
+
+        assertTrue(true);
+
+    }
+
+    public static Map<String, String> getCryptocurrencies() {
+
+        Map<String, String> cryptocurrencies = new HashMap<>();
+
+        cryptocurrencies.put("BTC-USD", "Bitcoin USD");
+        cryptocurrencies.put("ETH-USD", "Ethereum USD");
+        cryptocurrencies.put("USDT-USD", "Tether USDt USD");
+        cryptocurrencies.put("XRP-USD", "XRP USD");
+        cryptocurrencies.put("SOL-USD", "Solana USD");
+        cryptocurrencies.put("BNB-USD", "BNB USD");
+        cryptocurrencies.put("DOGE-USD", "Dogecoin USD");
+        cryptocurrencies.put("USDC-USD", "USD Coin USD");
+        cryptocurrencies.put("STETH-USD", "Lido Staked ETH USD");
+        cryptocurrencies.put("ADA-USD", "Cardano USD");
+        cryptocurrencies.put("WTRX-USD", "Wrapped TRON USD");
+        cryptocurrencies.put("TRX-USD", "TRON USD");
+        cryptocurrencies.put("AVAX-USD", "Avalanche USD");
+        cryptocurrencies.put("LINK-USD", "Chainlink USD");
+        cryptocurrencies.put("WSTETH-USD", "Lido wstETH USD");
+        cryptocurrencies.put("SHIB-USD", "Shiba Inu USD");
+        cryptocurrencies.put("TON11419-USD", "Toncoin USD");
+        cryptocurrencies.put("WBTC-USD", "Wrapped Bitcoin USD");
+        cryptocurrencies.put("DOT-USD", "Polkadot USD");
+        cryptocurrencies.put("WETH-USD", "WETH USD");
+        cryptocurrencies.put("XLM-USD", "Stellar USD");
+        cryptocurrencies.put("SUI20947-USD", "Sui USD");
+        cryptocurrencies.put("HBAR-USD", "Hedera USD");
+        cryptocurrencies.put("BCH-USD", "Bitcoin Cash USD");
+        cryptocurrencies.put("UNI7083-USD", "Uniswap USD");
+        cryptocurrencies.put("PEPE24478-USD", "Pepe USD");
+        cryptocurrencies.put("LTC-USD", "Litecoin USD");
+        cryptocurrencies.put("LEO-USD", "UNUS SED LEO USD");
+        cryptocurrencies.put("NEAR-USD", "NEAR Protocol USD");
+        cryptocurrencies.put("APT21794-USD", "Aptos USD");
+        cryptocurrencies.put("WEETH-USD", "Wrapped eETH USD");
+        cryptocurrencies.put("WBETH-USD", "Wrapped Beacon ETH USD");
+        cryptocurrencies.put("BTCB-USD", "Bitcoin BEP2 USD");
+        cryptocurrencies.put("ICP-USD", "Internet Computer USD");
+        cryptocurrencies.put("USDE29470-USD", "Ethena USDe USD");
+        cryptocurrencies.put("HYPE32196-USD", "Hyperliquid USD");
+        cryptocurrencies.put("AAVE-USD", "Aave USD");
+        cryptocurrencies.put("DAI-USD", "Dai USD");
+        cryptocurrencies.put("USDS33039-USD", "USDS USD");
+        cryptocurrencies.put("POL28321-USD", "POL (ex-MATIC) USD");
+        cryptocurrencies.put("ETC-USD", "Ethereum Classic USD");
+        cryptocurrencies.put("CRO-USD", "Cronos USD");
+        cryptocurrencies.put("RENDER-USD", "Render USD");
+        cryptocurrencies.put("VET-USD", "VeChain USD");
+        cryptocurrencies.put("SUSDE-USD", "Ethena Staked USDe USD");
+        cryptocurrencies.put("FET-USD", "Artificial Superintelligence Alliance USD");
+        cryptocurrencies.put("BGB-USD", "Bitget Token USD");
+        cryptocurrencies.put("TAO22974-USD", "Bittensor USD");
+        cryptocurrencies.put("MNT27075-USD", "Mantle USD");
+        cryptocurrencies.put("ARB11841-USD", "Arbitrum USD");
+        cryptocurrencies.put("FIL-USD", "Filecoin USD");
+        cryptocurrencies.put("XMR-USD", "Monero USD");
+        cryptocurrencies.put("KAS-USD", "Kaspa USD");
+        cryptocurrencies.put("OM-USD", "MANTRA USD");
+        cryptocurrencies.put("FTM-USD", "Fantom USD");
+        cryptocurrencies.put("ATOM-USD", "Cosmos USD");
+        cryptocurrencies.put("ALGO-USD", "Algorand USD");
+        cryptocurrencies.put("STX4847-USD", "Stacks USD");
+        cryptocurrencies.put("ENA-USD", "Ethena USD");
+        cryptocurrencies.put("OKB-USD", "OKB USD");
+        cryptocurrencies.put("JITOSOL-USD", "Jito Staked SOL USD");
+        cryptocurrencies.put("TIA22861-USD", "Celestia USD");
+        cryptocurrencies.put("OP-USD", "Optimism USD");
+        cryptocurrencies.put("IMX10603-USD", "Immutable USD");
+        cryptocurrencies.put("WIF-USD", "dogwifhat USD");
+        cryptocurrencies.put("BONK-USD", "Bonk USD");
+        cryptocurrencies.put("INJ-USD", "Injective USD");
+        cryptocurrencies.put("THETA-USD", "Theta Network USD");
+        cryptocurrencies.put("GRT6719-USD", "The Graph USD");
+        cryptocurrencies.put("ONDO-USD", "Ondo USD");
+        cryptocurrencies.put("VIRTUAL-USD", "Virtuals Protocol USD");
+        cryptocurrencies.put("SEI-USD", "Sei USD");
+        cryptocurrencies.put("WLD-USD", "Worldcoin USD");
+        cryptocurrencies.put("FLOKI-USD", "FLOKI USD");
+        cryptocurrencies.put("JASMY-USD", "JasmyCoin USD");
+        cryptocurrencies.put("RUNE-USD", "THORChain USD");
+        cryptocurrencies.put("FDUSD-USD", "First Digital USD USD");
+        cryptocurrencies.put("LDO-USD", "Lido DAO USD");
+        cryptocurrencies.put("CBBTC32994-USD", "Coinbase Wrapped BTC USD");
+        cryptocurrencies.put("RETH-USD", "Rocket Pool ETH USD");
+        cryptocurrencies.put("RSETH-USD", "Kelp DAO Restaked ETH USD");
+        cryptocurrencies.put("GALA-USD", "Gala USD");
+        cryptocurrencies.put("METH29035-USD", "Mantle Staked Ether USD");
+        cryptocurrencies.put("SAND-USD", "The Sandbox USD");
+        cryptocurrencies.put("KAIA-USD", "Kaia USD");
+        cryptocurrencies.put("MKR-USD", "Maker USD");
+        cryptocurrencies.put("BEAM28298-USD", "Beam USD");
+        cryptocurrencies.put("FLR-USD", "Flare USD");
+        cryptocurrencies.put("BRETT29743-USD", "Brett (Based) USD");
+        cryptocurrencies.put("EOS-USD", "EOS USD");
+        cryptocurrencies.put("HNT-USD", "Helium USD");
+        cryptocurrencies.put("QNT-USD", "Quant USD");
+        cryptocurrencies.put("KCS-USD", "KuCoin Token USD");
+        cryptocurrencies.put("PYTH-USD", "Pyth Network USD");
+        cryptocurrencies.put("RAY-USD", "Raydium USD");
+        cryptocurrencies.put("ENS-USD", "Ethereum Name Service USD");
+        cryptocurrencies.put("EZETH-USD", "Renzo Restaked ETH USD");
+        cryptocurrencies.put("BBTC31369-USD", "BounceBit BTC USD");
+        cryptocurrencies.put("JUP29210-USD", "Jupiter USD");
+        cryptocurrencies.put("FLOW-USD", "Flow USD");
+
+        return cryptocurrencies;
 
     }
 
