@@ -89,6 +89,117 @@ public class Yfinance {
 
     }
 
+    public Price getPriceFromDatabase(String symbol, LocalDate date, int tradingDaysAfter) throws YfinanceException {
+
+        if (symbol == null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (date == null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (tradingDaysAfter < 0) {
+            throw new YfinanceException("Trading days after must not be negative");
+        }
+
+        Price result = null;
+
+        String sql = """
+            SELECT symbol, pricedate, currency, open, close, high, low, adjClose, volume
+            FROM price
+            WHERE symbol = ? AND pricedate >= ? 
+            ORDER BY pricedate
+            LIMIT 1 OFFSET ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(date));
+            preparedStatement.setInt(3, tradingDaysAfter);
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = new Price();
+
+                    result.symbol = rs.getString(1);
+                    result.date = rs.getDate(2).toLocalDate();
+                    result.currency = rs.getString(3);
+                    result.open = rs.getDouble(4);
+                    result.close = rs.getDouble(5);
+                    result.high = rs.getDouble(6);
+                    result.low = rs.getDouble(7);
+                    result.adjClose = rs.getDouble(8);
+                    result.volume = rs.getLong(9);
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting price from database: "+e.getMessage(), e);
+        }
+
+        return result;
+
+
+
+    }
+
+    public Price getPriceFromDatabase(String symbol, LocalDate date) throws YfinanceException {
+
+        if (symbol == null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (date == null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        Price result = null;
+
+        String sql = """
+            SELECT symbol, pricedate, currency, open, close, high, low, adjClose, volume
+            FROM price
+            WHERE symbol = ? AND pricedate = ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(date));
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = new Price();
+
+                    result.symbol = rs.getString(1);
+                    result.date = rs.getDate(2).toLocalDate();
+                    result.currency = rs.getString(3);
+                    result.open = rs.getDouble(4);
+                    result.close = rs.getDouble(5);
+                    result.high = rs.getDouble(6);
+                    result.low = rs.getDouble(7);
+                    result.adjClose = rs.getDouble(8);
+                    result.volume = rs.getLong(9);
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting price from database: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
     public void savePrices(Map<LocalDate, Price> prices) throws YfinanceException {
 
 
