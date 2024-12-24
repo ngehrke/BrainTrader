@@ -17,7 +17,7 @@ class TestYfinanceGetAndSaveStockPrices {
     @Test
     void testYfinance() throws YfinanceException, InterruptedException {
 
-        Map<String,String> companies = getCryptocurrencies();
+        Map<String,String> companies = getUSInterestRates();
 
         Set<String> symbols = companies.keySet();
 
@@ -38,6 +38,20 @@ class TestYfinanceGetAndSaveStockPrices {
         yFinance.close();
 
         assertTrue(true);
+
+    }
+
+    public static Map<String,String> getUSInterestRates() {
+
+        Map<String, String> usInterestRates = new HashMap<>();
+
+        usInterestRates.put("^IRX", "13 Week Treasury Bill");
+        usInterestRates.put("^TNX", "10 Year Treasury Note");
+        usInterestRates.put("^FVX", "5 Year Treasury Note");
+        usInterestRates.put("^TYX", "30 Year Treasury Bond");
+
+        return usInterestRates;
+
 
     }
 

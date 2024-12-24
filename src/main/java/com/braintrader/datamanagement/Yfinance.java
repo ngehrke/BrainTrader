@@ -84,8 +84,367 @@ public class Yfinance {
 
             statement.execute(sqlCompanyInfo);
 
+            String sqlCompanyMeasure = """
+                    CREATE TABLE IF NOT EXISTS company_measure (
+                        symbol VARCHAR(255) NOT NULL, -- Das Ticker-Symbol, kein NULL-Wert erlaubt
+                        property VARCHAR(512) NOT NULL, -- Die Eigenschaft des Unternehmens, kein NULL-Wert erlaubt
+                        value DOUBLE PRECISION, -- Der Wert der Eigenschaft
+                        ts_entry TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel des Eintrags
+                        PRIMARY KEY (symbol, property) -- Primärschlüssel aus Symbol und Eigenschaft
+                    );
+                    """;
+
+            statement.execute(sqlCompanyMeasure);
 
         }
+
+    }
+
+    public LocalDate getDatePriceWasFirstTimeAboveThreshold(String symbol, LocalDate fromDate, LocalDate toDate, double thresholdPrice) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (fromDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (toDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new YfinanceException("From date must not be after to date");
+        }
+
+        LocalDate result = null;
+
+        String sql = """
+            SELECT MIN(pricedate) FROM price WHERE symbol = ? AND pricedate >= ? AND pricedate <= ? AND high > ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(fromDate));
+            preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
+            preparedStatement.setDouble(4, thresholdPrice);
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = rs.getDate(1).toLocalDate();
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting date where price was first time above threshold: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public LocalDate getDatePriceWasFirstTimeBelowThreshold(String symbol, LocalDate fromDate, LocalDate toDate, double thresholdPrice) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (fromDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (toDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new YfinanceException("From date must not be after to date");
+        }
+
+        LocalDate result = null;
+
+        String sql = """
+            SELECT MIN(pricedate) FROM price WHERE symbol = ? AND pricedate >= ? AND pricedate <= ? AND low < ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(fromDate));
+            preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
+            preparedStatement.setDouble(4, thresholdPrice);
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = rs.getDate(1).toLocalDate();
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting date where price was first time below threshold: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public boolean wasPriceBelowThreshold(String symbol, LocalDate fromDate, LocalDate toDate, double thresholdPrice) throws YfinanceException {
+
+        boolean result = false;
+
+        try {
+
+            Double lowestPrice = getLowestPriceInPeriod(symbol, fromDate, toDate);
+
+            if (lowestPrice != null && lowestPrice < thresholdPrice) {
+                result = true;
+            }
+
+        } catch (YfinanceException e) {
+            throw new YfinanceException("Error checking if price was below threshold: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public LocalDate getDateOfLowestPriceInPeriod(String symbol, LocalDate fromDate, LocalDate toDate) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (fromDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (toDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new YfinanceException("From date must not be after to date");
+        }
+
+        LocalDate result = null;
+
+        String sql = """
+            SELECT pricedate FROM price WHERE symbol = ? AND pricedate >= ? AND pricedate <= ? ORDER BY low ASC LIMIT 1
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(fromDate));
+            preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = rs.getDate(1).toLocalDate();
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting date of lowest price in period: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public Double getLowestPriceInPeriod(String symbol, LocalDate fromDate, LocalDate toDate) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (fromDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (toDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new YfinanceException("From date must not be after to date");
+        }
+
+        Double result = null;
+
+        String sql = """
+            SELECT MIN(low) FROM price WHERE symbol = ? AND pricedate >= ? AND pricedate <= ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(fromDate));
+            preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = rs.getDouble(1);
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting lowest price in period: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public LocalDate getDateOfHighestPriceInPeriod(String symbol, LocalDate fromDate, LocalDate toDate) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (fromDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (toDate==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        if (fromDate.isAfter(toDate)) {
+            throw new YfinanceException("From date must not be after to date");
+        }
+
+        LocalDate result = null;
+
+        String sql = """
+            SELECT pricedate FROM price WHERE symbol = ? AND pricedate >= ? AND pricedate <= ? ORDER BY high DESC LIMIT 1
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(fromDate));
+            preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = rs.getDate(1).toLocalDate();
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting date of highest price in period: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public Double getHighestPriceInPeriod(String symbol, LocalDate fromDate, LocalDate toDate) throws YfinanceException {
+
+            if (symbol==null) {
+                throw new YfinanceException("Symbol must not be null");
+            }
+
+            if (fromDate==null) {
+                throw new YfinanceException("Date must not be null");
+            }
+
+            if (toDate==null) {
+                throw new YfinanceException("Date must not be null");
+            }
+
+            if (fromDate.isAfter(toDate)) {
+                throw new YfinanceException("From date must not be after to date");
+            }
+
+            Double result = null;
+
+            String sql = """
+                SELECT MAX(high) FROM price WHERE symbol = ? AND pricedate >= ? AND pricedate <= ?
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                preparedStatement.setString(1, symbol);
+                preparedStatement.setDate(2, java.sql.Date.valueOf(fromDate));
+                preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
+
+                try (var rs = preparedStatement.executeQuery()) {
+
+                    if (rs.next()) {
+
+                        result = rs.getDouble(1);
+
+                    }
+
+                }
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error getting highest price in period: "+e.getMessage(), e);
+            }
+
+            return result;
+    }
+
+    public LocalDate getNearestTradingDayFromDatabase(String symbol, LocalDate date) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (date==null) {
+            throw new YfinanceException("Date must not be null");
+        }
+
+        LocalDate result = null;
+
+        String sql = """
+            SELECT MIN(pricedate) FROM price WHERE symbol = ? AND pricedate >= ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(date));
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+
+                    result = rs.getDate(1).toLocalDate();
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting next trading day: "+e.getMessage(), e);
+        }
+
+        return result;
 
     }
 

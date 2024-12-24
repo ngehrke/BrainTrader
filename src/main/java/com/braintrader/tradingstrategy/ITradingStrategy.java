@@ -6,6 +6,6 @@ import java.time.LocalDate;
 
 public interface ITradingStrategy {
 
-    Trade apply(String symbol,double quantity,PriceType priceType, LocalDate startDate) throws TradingStrategyException;
+    Trade apply(String symbol,double quantity, LocalDate startDate) throws TradingStrategyException;
 
 }
