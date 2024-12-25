@@ -1,11 +1,12 @@
 package com.braintrader.tradingstrategy;
 
+import com.braintrader.measures.IMeasure;
 import lombok.Getter;
 
 import java.time.LocalDate;
 
 @Getter
-public class Trade {
+public class Trade implements IMeasure {
 
     private final String symbol;
 
@@ -15,6 +16,8 @@ public class Trade {
     private final LocalDate exitDate;
 
     private final double quantity;
+
+    protected String tradeName=null;
 
     public Trade(String symbol,double quantity, double entryPrice, double exitPrice, LocalDate entryDate, LocalDate exitDate) {
 
@@ -48,5 +51,20 @@ public class Trade {
         return "Trade [symbol=" + symbol + ", entryPrice=" + entryPrice + ", exitPrice=" + exitPrice + ", entryDate=" + entryDate + ", exitDate=" + exitDate + "]";
     }
 
+
+    @Override
+    public String getMeasureName() {
+        return this.tradeName;
+    }
+
+    @Override
+    public LocalDate getMeasureDate() {
+        return this.entryDate;
+    }
+
+    @Override
+    public Double getMeasureValue() {
+        return this.getReturn();
+    }
 
 }

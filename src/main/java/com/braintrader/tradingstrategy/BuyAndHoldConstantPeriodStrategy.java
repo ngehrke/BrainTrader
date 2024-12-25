@@ -37,14 +37,23 @@ public class BuyAndHoldConstantPeriodStrategy implements ITradingStrategy {
 
         try {
 
+            if (startDate==null) {
+                return null;
+            }
+
             Price buyPrice = yFinance.getPriceFromDatabase(symbol, startDate);
 
             // calcualte the enddate and prices
             LocalDate endDate = startDate.plusDays(periodInDays);
             LocalDate sellDate = yFinance.getNearestTradingDayFromDatabase(symbol, endDate);
+
+            if (sellDate==null) {
+                return null;
+            }
+
             Price sellPriceEndOfPeriod = yFinance.getPriceFromDatabase(symbol, sellDate);
 
-            if (sellDate==null || sellPriceEndOfPeriod==null) {
+            if (sellPriceEndOfPeriod==null) {
                 return null;
             }
 
@@ -66,12 +75,21 @@ public class BuyAndHoldConstantPeriodStrategy implements ITradingStrategy {
             Trade stopLossTrade = new Trade(symbol,quantity, buyPriceValue, stopLossPrice, startDate, sellDate);
             Trade soldEndOfPeriodTrade = new Trade(symbol,quantity, buyPriceValue, sellPriceEndOfPeriodValue, startDate, sellDate);
 
+            soldEndOfPeriodTrade.tradeName="BuyAndHoldConstantPeriodStrategy_"+periodInDays+"_"+takeProfitInPercent+"_"+stopLossInPercent;
+            stopLossTrade.tradeName="BuyAndHoldConstantPeriodStrategy_"+periodInDays+"_"+takeProfitInPercent+"_"+stopLossInPercent;
+            soldTakeProfitTrade.tradeName="BuyAndHoldConstantPeriodStrategy_"+periodInDays+"_"+takeProfitInPercent+"_"+stopLossInPercent;
+
             LocalDate datePriceWasFirstTimeAboveTakeProfit = yFinance.getDatePriceWasFirstTimeAboveThreshold(symbol, startDate, sellDate, takeProfitPrice);
             LocalDate datePriceWasFirstTimeBelowStopLoss   = yFinance.getDatePriceWasFirstTimeBelowThreshold(symbol, startDate, sellDate, stopLossPrice);
 
-            // TODO: decide which trade to return
-
-            return null;
+            // decide which trade to return
+            if (datePriceWasFirstTimeAboveTakeProfit!=null && (datePriceWasFirstTimeBelowStopLoss==null || datePriceWasFirstTimeBelowStopLoss.isAfter(datePriceWasFirstTimeAboveTakeProfit) ) ) {
+                return soldTakeProfitTrade;
+            } else if (datePriceWasFirstTimeBelowStopLoss!=null) {
+                return stopLossTrade;
+            } else {
+                return soldEndOfPeriodTrade;
+            }
 
         } catch (YfinanceException e) {
             throw new TradingStrategyException("Error while getting price from database: "+e.getMessage(), e);
@@ -84,8 +102,5 @@ public class BuyAndHoldConstantPeriodStrategy implements ITradingStrategy {
         return "BuyAndHoldConstantPeriodStrategy [periodInDays=" + periodInDays + ", takeProfitInPercent=" + takeProfitInPercent + ", stopLossInPercent=" + stopLossInPercent + "]";
     }
 
-    public String getMeasureName() {
-        return "BuyAndHoldConstantPeriodStrategy_"+periodInDays+"_"+takeProfitInPercent+"_"+stopLossInPercent;
-    }
 
 }

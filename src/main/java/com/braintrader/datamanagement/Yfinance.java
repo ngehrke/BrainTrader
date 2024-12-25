@@ -1,6 +1,7 @@
 package com.braintrader.datamanagement;
 
 import com.braintrader.exceptions.YfinanceException;
+import com.braintrader.measures.IMeasure;
 import jep.MainInterpreter;
 import jep.Interpreter;
 import jep.SharedInterpreter;
@@ -8,6 +9,7 @@ import jep.SharedInterpreter;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
@@ -87,15 +89,53 @@ public class Yfinance {
             String sqlCompanyMeasure = """
                     CREATE TABLE IF NOT EXISTS company_measure (
                         symbol VARCHAR(255) NOT NULL, -- Das Ticker-Symbol, kein NULL-Wert erlaubt
-                        property VARCHAR(512) NOT NULL, -- Die Eigenschaft des Unternehmens, kein NULL-Wert erlaubt
-                        value DOUBLE PRECISION, -- Der Wert der Eigenschaft
+                        measuredate DATE NOT NULL, -- Das Datum des Maßes im YYYY-MM-DD-Format, kein NULL-Wert erlaubt
+                        measure VARCHAR(512) NOT NULL, -- Die Eigenschaft des Unternehmens, kein NULL-Wert erlaubt
+                        val DOUBLE PRECISION NOT NULL, -- Der Wert der Eigenschaft
                         ts_entry TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel des Eintrags
-                        PRIMARY KEY (symbol, property) -- Primärschlüssel aus Symbol und Eigenschaft
+                        PRIMARY KEY (symbol,measuredate, measure) -- Primärschlüssel aus Symbol und Eigenschaft
                     );
                     """;
 
             statement.execute(sqlCompanyMeasure);
 
+        }
+
+    }
+
+    public boolean saveMeasureInDatabase(IMeasure measure) throws YfinanceException  {
+
+        if (measure == null) {
+            logger.accept("Measure must not be null, not saving measure");
+            return false;
+        }
+
+        if (measure.getMeasureValue()==null) {
+            logger.accept("Measure value is null, not saving measure for "+measure);
+            return false;
+        }
+
+        String sql = """
+            MERGE INTO company_measure (symbol, measuredate, measure, val)
+            KEY (symbol, measuredate, measure)
+            VALUES (?, ?, ?, ?)
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, measure.getSymbol());
+            preparedStatement.setDate(2, java.sql.Date.valueOf(measure.getMeasureDate()));
+            preparedStatement.setString(3, measure.getMeasureName());
+            preparedStatement.setDouble(4, measure.getMeasureValue());
+
+            preparedStatement.execute();
+
+            logger.accept("Saved measure for "+measure);
+
+            return true;
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error saving measure to database: "+e.getMessage(), e);
         }
 
     }
@@ -131,12 +171,10 @@ public class Yfinance {
             preparedStatement.setDate(3, java.sql.Date.valueOf(toDate));
             preparedStatement.setDouble(4, thresholdPrice);
 
-            try (var rs = preparedStatement.executeQuery()) {
+            try (ResultSet rs = preparedStatement.executeQuery()) {
 
-                if (rs.next()) {
-
-                    result = rs.getDate(1).toLocalDate();
-
+                if (rs.next() && rs.getDate(1)!=null) {
+                        result = rs.getDate(1).toLocalDate();
                 }
 
             }
@@ -182,7 +220,7 @@ public class Yfinance {
 
             try (var rs = preparedStatement.executeQuery()) {
 
-                if (rs.next()) {
+                if (rs.next() && rs.getDate(1)!=null) {
 
                     result = rs.getDate(1).toLocalDate();
 
@@ -432,7 +470,7 @@ public class Yfinance {
 
             try (var rs = preparedStatement.executeQuery()) {
 
-                if (rs.next()) {
+                if (rs.next() && rs.getDate(1)!=null) {
 
                     result = rs.getDate(1).toLocalDate();
 
@@ -749,6 +787,123 @@ public class Yfinance {
             }
 
         }
+
+    }
+
+    public LocalDate getLastPriceEntry(String symbol) throws YfinanceException {
+
+            if (symbol==null) {
+                throw new YfinanceException("Symbol must not be null");
+            }
+
+            LocalDate result = null;
+
+            String sql = """
+                SELECT MAX(pricedate) FROM price WHERE symbol = ?
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                preparedStatement.setString(1, symbol);
+
+                try (var rs = preparedStatement.executeQuery()) {
+
+                    if (rs.next()) {
+
+                        result = rs.getDate(1).toLocalDate();
+
+                    }
+
+                }
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error getting last price entry for "+symbol+": "+e.getMessage(), e);
+            }
+
+            return result;
+
+    }
+
+    public Set<LocalDate> getDatesOfAllPriceEntries(String symbol) throws YfinanceException {
+
+        Set<LocalDate> result = new LinkedHashSet<>();
+
+        String sql = """
+            SELECT DISTINCT pricedate FROM price WHERE symbol = ? ORDER BY pricedate
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                while (rs.next()) {
+                    result.add(rs.getDate(1).toLocalDate());
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting dates of all price entries for "+symbol+": "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public LocalDate getFirstPriceEntry(String symbol) throws YfinanceException {
+
+            if (symbol==null) {
+                throw new YfinanceException("Symbol must not be null");
+            }
+
+            LocalDate result = null;
+
+            String sql = """
+                SELECT MIN(pricedate) FROM price WHERE symbol = ?
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                preparedStatement.setString(1, symbol);
+
+                try (var rs = preparedStatement.executeQuery()) {
+
+                    if (rs.next()) {
+
+                        result = rs.getDate(1).toLocalDate();
+
+                    }
+
+                }
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error getting first price entry for "+symbol+": "+e.getMessage(), e);
+            }
+
+            return result;
+    }
+
+    public Set<String> getAllSymbolsInDatabase() throws YfinanceException {
+
+        Set<String> result = new LinkedHashSet<>();
+
+        try (Statement statement = this.con.createStatement()) {
+
+            try (var rs = statement.executeQuery("SELECT DISTINCT symbol FROM price ORDER BY symbol")) {
+
+                while (rs.next()) {
+                    result.add(rs.getString(1));
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting symbols from database: "+e.getMessage(), e);
+        }
+
+        return result;
 
     }
 
