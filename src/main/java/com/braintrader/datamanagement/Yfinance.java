@@ -13,9 +13,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -98,6 +101,26 @@ public class Yfinance {
                     """;
 
             statement.execute(sqlCompanyMeasure);
+
+        }
+
+    }
+
+    public void saveMeasuresInDatabase(Collection<IMeasure> measures) throws YfinanceException  {
+
+        if (measures==null) {
+            throw new YfinanceException("Measures must not be null");
+        }
+
+        for (IMeasure measure : measures) {
+
+            try {
+
+                this.saveMeasureInDatabase(measure);
+
+            } catch (YfinanceException e) {
+                throw new YfinanceException("Error saving measures to database: "+e.getMessage(), e);
+            }
 
         }
 
@@ -818,6 +841,49 @@ public class Yfinance {
 
             } catch (SQLException e) {
                 throw new YfinanceException("Error getting last price entry for "+symbol+": "+e.getMessage(), e);
+            }
+
+            return result;
+
+    }
+
+    public List<Price> getAllPricesInDatabase(String symbol) throws YfinanceException {
+
+            List<Price> result = new ArrayList<>();
+
+            String sql = """
+                SELECT symbol, pricedate, currency, open, close, high, low, adjClose, volume
+                FROM price WHERE symbol = ? ORDER BY pricedate
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                preparedStatement.setString(1, symbol);
+
+                try (var rs = preparedStatement.executeQuery()) {
+
+                    while (rs.next()) {
+
+                        Price price = new Price();
+
+                        price.symbol = rs.getString(1);
+                        price.date = rs.getDate(2).toLocalDate();
+                        price.currency = rs.getString(3);
+                        price.open = rs.getDouble(4);
+                        price.close = rs.getDouble(5);
+                        price.high = rs.getDouble(6);
+                        price.low = rs.getDouble(7);
+                        price.adjClose = rs.getDouble(8);
+                        price.volume = rs.getLong(9);
+
+                        result.add(price);
+
+                    }
+
+                }
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error getting all prices for "+symbol+": "+e.getMessage(), e);
             }
 
             return result;

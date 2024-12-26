@@ -35,7 +35,12 @@ public class Trade implements IMeasure {
     }
 
     public double getReturn() {
-        return (exitPrice - entryPrice) / entryPrice;
+
+        double value=(exitPrice - entryPrice) / entryPrice;
+
+        double scale = Math.pow(10, 5); // 10^4 = 10000
+        return Math.round(value * scale) / scale;
+
     }
 
     public double getDurationInDays() {
@@ -43,7 +48,12 @@ public class Trade implements IMeasure {
     }
 
     public double getAnnualizedReturn() {
-        return Math.pow(1 + getReturn(), 365 / getDurationInDays()) - 1;
+
+        double value=Math.pow(1 + getReturn(), 365 / getDurationInDays()) - 1;
+
+        double scale = Math.pow(10, 5); // 10^4 = 10000
+        return Math.round(value * scale) / scale;
+
     }
 
     @Override
