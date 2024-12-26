@@ -2,14 +2,14 @@ package com.braintrader.measures;
 
 import java.time.LocalDate;
 
-public class IndicatorMeasure implements IMeasure {
+public class GeneralMeasure implements IMeasure {
 
     private final String symbol;
     private final String measureName;
     private final LocalDate measureDate;
     private final Double measureValue;
 
-    public IndicatorMeasure(String symbol, String measureName, LocalDate measureDate, Double measureValue) {
+    public GeneralMeasure(String symbol, String measureName, LocalDate measureDate, Double measureValue) {
 
         this.symbol = symbol;
         this.measureName = measureName;

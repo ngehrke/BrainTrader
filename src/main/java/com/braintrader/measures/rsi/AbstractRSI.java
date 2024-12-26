@@ -3,7 +3,7 @@ package com.braintrader.measures.rsi;
 import com.braintrader.datamanagement.Yfinance;
 import com.braintrader.exceptions.IndicatorException;
 import com.braintrader.measures.IMeasure;
-import com.braintrader.measures.IndicatorMeasure;
+import com.braintrader.measures.GeneralMeasure;
 import com.braintrader.measures.YFinanceIndicatorCalculator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
@@ -47,7 +47,7 @@ public class AbstractRSI extends YFinanceIndicatorCalculator {
             Num value = rsi.getValue(index);
 
             if (value!=null && !value.isNaN() && value.doubleValue()>0 ) {
-                IMeasure measure = new IndicatorMeasure(symbol, "RSI"+dayIntervall, date, value.doubleValue());
+                IMeasure measure = new GeneralMeasure(symbol, "RSI"+dayIntervall, date, value.doubleValue());
                 resultList.add(measure);
             }
 

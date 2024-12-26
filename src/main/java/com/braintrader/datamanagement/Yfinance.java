@@ -1,6 +1,7 @@
 package com.braintrader.datamanagement;
 
 import com.braintrader.exceptions.YfinanceException;
+import com.braintrader.measures.GeneralMeasure;
 import com.braintrader.measures.IMeasure;
 import jep.MainInterpreter;
 import jep.Interpreter;
@@ -103,6 +104,97 @@ public class Yfinance {
             statement.execute(sqlCompanyMeasure);
 
         }
+
+    }
+
+    public String getCompanyInfo(String symbol, String property) throws YfinanceException {
+
+        if (symbol==null) {
+            throw new YfinanceException("Symbol must not be null");
+        }
+
+        if (property==null) {
+            throw new YfinanceException("Property must not be null");
+        }
+
+        String result = null;
+
+        String sql = """
+            SELECT val FROM company_info WHERE symbol = ? AND property = ?
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, symbol);
+            preparedStatement.setString(2, property);
+
+            try (ResultSet rs = preparedStatement.executeQuery()) {
+
+                if (rs.next()) {
+                    result = rs.getString(1);
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting company info from database: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public List<IMeasure> getMeasures(String symbol, String measureName, LocalDate startDate, LocalDate endDate) throws YfinanceException  {
+
+            if (symbol==null) {
+                throw new YfinanceException("Symbol must not be null");
+            }
+
+            if (measureName==null) {
+                throw new YfinanceException("Measure name must not be null");
+            }
+
+            if (startDate==null) {
+                throw new YfinanceException("Start date must not be null");
+            }
+
+            if (endDate==null) {
+                throw new YfinanceException("End date must not be null");
+            }
+
+            if (startDate.isAfter(endDate)) {
+                throw new YfinanceException("Start date must not be after end date");
+            }
+
+            List<IMeasure> result = new ArrayList<>();
+
+            String sql = """
+                SELECT symbol, measuredate, measure, val FROM company_measure WHERE symbol = ? AND measure = ? AND measuredate >= ? AND measuredate <= ? ORDER BY measuredate
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                preparedStatement.setString(1, symbol);
+                preparedStatement.setString(2, measureName);
+                preparedStatement.setDate(3, java.sql.Date.valueOf(startDate));
+                preparedStatement.setDate(4, java.sql.Date.valueOf(endDate));
+
+                try (ResultSet rs = preparedStatement.executeQuery()) {
+
+                    while (rs.next()) {
+
+                        IMeasure measure = new GeneralMeasure(rs.getString(1), rs.getString(3), rs.getDate(2).toLocalDate(), rs.getDouble(4));
+                        result.add(measure);
+
+                    }
+
+                }
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error getting measures from database: "+e.getMessage(), e);
+            }
+
+            return result;
 
     }
 
