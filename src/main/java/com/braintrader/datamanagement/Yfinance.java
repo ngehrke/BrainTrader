@@ -144,6 +144,47 @@ public class Yfinance {
 
     }
 
+    public IMeasure getMeasure(String symbol, String measureName, LocalDate theDate) throws YfinanceException  {
+
+            if (symbol==null) {
+                throw new YfinanceException("Symbol must not be null");
+            }
+
+            if (measureName==null) {
+                throw new YfinanceException("Measure name must not be null");
+            }
+
+            if (theDate==null) {
+                throw new YfinanceException("Date must not be null");
+            }
+
+            IMeasure result = null;
+
+            String sql = """
+                SELECT symbol, measuredate, measure, val FROM company_measure WHERE symbol = ? AND measure = ? AND measuredate = ?
+                """;
+
+            try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+                preparedStatement.setString(1, symbol);
+                preparedStatement.setString(2, measureName);
+                preparedStatement.setDate(3, java.sql.Date.valueOf(theDate));
+
+                try (ResultSet rs = preparedStatement.executeQuery()) {
+
+                    if (rs.next()) {
+                        result = new GeneralMeasure(rs.getString(1), rs.getString(3), rs.getDate(2).toLocalDate(), rs.getDouble(4));
+                    }
+
+                }
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error getting measure from database: "+e.getMessage(), e);
+            }
+
+            return result;
+    }
+
     public List<IMeasure> getMeasures(String symbol, String measureName, LocalDate startDate, LocalDate endDate) throws YfinanceException  {
 
             if (symbol==null) {

@@ -3,11 +3,11 @@ package com.braintrader.datamanagement;
 import com.braintrader.exceptions.DataModelException;
 import com.braintrader.exceptions.YfinanceException;
 import com.braintrader.measures.IMeasure;
+import lombok.Getter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,14 +18,15 @@ public class DataModelManager {
 
     private final LocalDate startDate;
     private final LocalDate endDate;
-    private final Set<String> usedDays = new HashSet<>();
 
-    private Map<String,Double> lhs = new HashMap<>();
-    private List<Map<String,Double>> rhsMeasureColumns = new ArrayList<>();
-    private List<String> rhsMeasureColumnNames = new ArrayList<>();
+    private final Map<RowKey,Double> lhs = new HashMap<>();
+    private final List<Map<RowKey,Double>> rhsMeasureColumns = new ArrayList<>();
+    @Getter
+    private final List<String> rhsMeasureColumnNames = new ArrayList<>();
 
-    private List<Map<String,String>> rhsCategoryColumns = new ArrayList<>();
-    private List<String> rhsCategoryColumnNames = new ArrayList<>();
+    private final List<Map<RowKey,String>> rhsCategoryColumns = new ArrayList<>();
+    @Getter
+    private final List<String> rhsCategoryColumnNames = new ArrayList<>();
 
     public DataModelManager(Yfinance yFinance, LocalDate startDate, LocalDate endDate) throws DataModelException {
 
@@ -54,13 +55,16 @@ public class DataModelManager {
 
             List<IMeasure> measures = yFinance.getMeasures(symbol, measureName, startDate, endDate);
 
+            if (measures.isEmpty()) {
+                throw new YfinanceException("No measures found for LHS for symbol "+symbol+" and measure "+measureName);
+            }
+
             for(IMeasure measure : measures) {
 
-                String key=measure.getMeasureDate()+"."+symbol;
+                RowKey key = new RowKey(measure.getMeasureDate(), symbol);
                 Double value=measure.getMeasureValue();
 
                 this.lhs.put(key, value);
-                this.usedDays.add(measure.getMeasureDate().toString());
 
             }
 
@@ -68,39 +72,243 @@ public class DataModelManager {
 
     }
 
-    public void addRHSMeasureColumn(Set<String> symbols, String measureName) throws YfinanceException {
+    public void addRHSMeasureColumn(String symbol, String measureName) throws YfinanceException {
 
-        // define the right hand side of the equation
-        Map<String,Double> column = new HashMap<>();
+        if (lhs.isEmpty()) {
+            throw new YfinanceException("Please define the left hand side measure column first.");
+        }
 
-        for(String symbol:symbols) {
+        Map<RowKey,Double> rhsColumn = new HashMap<>();
 
-            List<IMeasure> measures = yFinance.getMeasures(symbol, measureName, startDate, endDate);
+        // get all rowKeys of the lhs
+        Set<RowKey> lhsRowKeys = lhs.keySet();
 
-            for(IMeasure measure : measures) {
+        // iterate all keys of the lhs
+        for(RowKey key : lhsRowKeys) {
 
-                String key=measure.getMeasureDate()+"."+symbol;
-                Double value=measure.getMeasureValue();
+            LocalDate date = key.getDate();
 
-                column.put(key, value);
-                this.usedDays.add(measure.getMeasureDate().toString());
+            // get the measure for the symbol
+            IMeasure measure = yFinance.getMeasure(symbol, measureName, date);
 
+            if (measure!=null) {
+                rhsColumn.put(key, measure.getMeasureValue());
+            }
+
+
+        }
+
+        rhsMeasureColumns.add(rhsColumn);
+        rhsMeasureColumnNames.add(measureName+"_"+symbol);
+
+        if (rhsColumn.isEmpty()) {
+            throw new YfinanceException("No measures found for RHS for symbol "+symbol+" and measure "+measureName);
+        }
+
+    }
+
+    public void addRHSCategoryColumn(String category) throws YfinanceException {
+
+        if (lhs.isEmpty()) {
+            throw new YfinanceException("Please define the left hand side measure column first.");
+        }
+
+        Map<RowKey,String> rhsColumn = new HashMap<>();
+
+        // get all rowKeys of the lhs
+        Set<RowKey> lhsRowKeys = lhs.keySet();
+
+        // iterate all keys of the lhs
+        for(RowKey key : lhsRowKeys) {
+
+            String symbolLHS = key.getSymbol();
+
+            String catValue = yFinance.getCompanyInfo(symbolLHS, category);
+
+            if (catValue!=null) {
+                rhsColumn.put(key, catValue);
             }
 
         }
 
-        rhsMeasureColumns.add(column);
-        rhsMeasureColumnNames.add(measureName);
+        rhsCategoryColumns.add(rhsColumn);
+        rhsCategoryColumnNames.add(category);
+
+        if (rhsColumn.isEmpty()) {
+            throw new YfinanceException("No measures found for RHS for category "+category);
+        }
 
     }
 
-    // TODO: addRHSCategoryColumn (getCompanyInfo)
-    public void addRHSCategoryColumn(Set<String> symbols, String category) throws YfinanceException {
+    public void addSymbolAsRHSCategoryColumn() throws YfinanceException {
 
-        if (usedDays.isEmpty()) {
-            throw new YfinanceException("No days have been used yet. Please define the left hand side and the right hand side measure columns first.");
+        if (lhs.isEmpty()) {
+            throw new YfinanceException("Please define the left hand side measure column first.");
         }
 
+        Map<RowKey,String> rhsColumn = new HashMap<>();
+
+        // get all rowKeys of the lhs
+        Set<RowKey> lhsRowKeys = lhs.keySet();
+
+        // iterate all keys of the lhs
+        for(RowKey key : lhsRowKeys) {
+
+            String symbolLHS = key.getSymbol();
+            rhsColumn.put(key, symbolLHS);
+
+        }
+
+        rhsCategoryColumns.add(rhsColumn);
+        rhsCategoryColumnNames.add("symbol");
+
+        if (rhsColumn.isEmpty()) {
+            throw new YfinanceException("No measures found for RHS for symbol");
+        }
+
+    }
+
+    // create createLHSVector but order rowKeys fist
+    public Double[] createLHSVector() throws YfinanceException {
+
+            if (lhs.isEmpty()) {
+                throw new YfinanceException("Please define the left hand side measure column first.");
+            }
+
+            // get all rowKeys of the lhs
+            List<RowKey> lhsRowKeys = new ArrayList<>(lhs.keySet());
+            lhsRowKeys.sort(RowKey::compareTo);
+
+            // iterate all keys of the lhs
+            Double[] lhsVector = new Double[lhsRowKeys.size()];
+
+            int counter=0;
+            for(RowKey key : lhsRowKeys) {
+
+                lhsVector[counter] = lhs.get(key);
+                counter++;
+
+            }
+
+            return lhsVector;
+
+    }
+
+    public Double[][] createRHSMeasureMatrix() throws YfinanceException  {
+
+        if (lhs.isEmpty()) {
+            throw new YfinanceException("Please define the left hand side measure column first.");
+        }
+
+        // get all rowKeys of the lhs
+        List<RowKey> lhsRowKeys = new ArrayList<>(lhs.keySet());
+        lhsRowKeys.sort(RowKey::compareTo);
+
+        // iterate all keys of the lhs
+        Double[][] rhsMatrix = new Double[lhsRowKeys.size()][rhsMeasureColumns.size()];
+
+        int counter=0;
+        for(RowKey key : lhsRowKeys) {
+
+            for(int i=0;i<rhsMeasureColumns.size();i++) {
+
+                Double value = rhsMeasureColumns.get(i).get(key);
+
+                if (value!=null) {
+                    rhsMatrix[counter][i] = rhsMeasureColumns.get(i).get(key);
+                } else {
+                    rhsMatrix[counter][i] = null;
+                }
+
+            }
+
+            counter++;
+
+        }
+
+        return rhsMatrix;
+
+    }
+
+    public String[][] createRHSCategoryMatrix() throws YfinanceException  {
+
+        if (lhs.isEmpty()) {
+            throw new YfinanceException("Please define the left hand side measure column first.");
+        }
+
+        // get all rowKeys of the lhs
+        List<RowKey> lhsRowKeys = new ArrayList<>(lhs.keySet());
+        lhsRowKeys.sort(RowKey::compareTo);
+
+        // iterate all keys of the lhs
+        String[][] rhsMatrix = new String[lhsRowKeys.size()][rhsCategoryColumns.size()];
+
+        int counter=0;
+        for(RowKey key : lhsRowKeys) {
+
+            for(int i=0;i<rhsCategoryColumns.size();i++) {
+
+                String value = rhsCategoryColumns.get(i).get(key);
+
+                if (value!=null) {
+                    rhsMatrix[counter][i] = rhsCategoryColumns.get(i).get(key);
+                } else {
+                    rhsMatrix[counter][i] = null;
+                }
+
+            }
+
+            counter++;
+
+        }
+
+        return rhsMatrix;
+
+    }
+
+    public static int countNulls(Double[][] matrix) {
+
+        int count = 0;
+
+        for (Double[] row : matrix) {
+            for (Double value : row) {
+                if (value == null) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+
+    }
+
+    public static int countNulls(Double[] vector) {
+
+        int count = 0;
+
+        for (Double value : vector) {
+            if (value == null) {
+                count++;
+            }
+        }
+
+        return count;
+
+    }
+
+    public static int countNulls(String[][] matrix) {
+
+        int count = 0;
+
+        for (String[] row : matrix) {
+            for (String value : row) {
+                if (value == null) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
 
     }
 
