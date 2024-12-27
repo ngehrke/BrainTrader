@@ -1,7 +1,12 @@
 package com.braintrader.tests.dev;
 
+import ai.catboost.CatBoostError;
+import ai.catboost.CatBoostModel;
+import ai.catboost.CatBoostPredictions;
+import com.braintrader.datamanagement.CatboostTrainer;
 import com.braintrader.datamanagement.DataModelManager;
 import com.braintrader.datamanagement.Yfinance;
+import com.braintrader.exceptions.CatboostException;
 import com.braintrader.exceptions.DataModelException;
 import com.braintrader.exceptions.YfinanceException;
 import org.junit.jupiter.api.Test;
@@ -16,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TestDataMatrix {
 
     @Test
-    void test() throws YfinanceException, DataModelException {
+    void test() throws YfinanceException, DataModelException, CatboostException, CatBoostError {
 
         LocalDate startDate = LocalDate.of(2000, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 12, 23);
@@ -51,6 +56,21 @@ class TestDataMatrix {
         System.out.println("y:\n"+ Arrays.deepToString(y));
         System.out.println("x:\n"+ Arrays.deepToString(x));
         System.out.println("xCat:\n"+ Arrays.deepToString(xCat));
+
+        CatboostTrainer trainer = new CatboostTrainer(y, x, xCat, dataModelManager.getRhsMeasureColumnNames(), dataModelManager.getRhsCategoryColumnNames());
+
+        String modelPath = "model.cbm";
+        trainer.trainModel(modelPath, 0.8);
+
+        // Example: Making predictions
+        CatBoostModel model = CatBoostModel.loadModel(modelPath);
+
+        float[][] xFloat = DataModelManager.convertToFloatArray(x);
+        CatBoostPredictions predictions = model.predict(xFloat,xCat);
+
+        System.out.println("Predictions: " + predictions.get(0, 0));
+
+        model.close();
 
         yFinance.close();
 

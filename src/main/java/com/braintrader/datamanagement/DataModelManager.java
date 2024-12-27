@@ -266,6 +266,55 @@ public class DataModelManager {
 
     }
 
+    public static float[] convertToFloatArray(Double[] array) {
+
+        if (array == null) {
+            throw new IllegalArgumentException("Input array cannot be null");
+        }
+
+        float[] floatArray = new float[array.length];
+
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] != null) {
+                floatArray[i] = array[i].floatValue();
+            } else {
+                floatArray[i] = Float.NaN; // Assign NaN for null values
+            }
+        }
+
+        return floatArray;
+    }
+
+    public static float[][] convertToFloatArray(Double[][] array) {
+
+        if (array == null) {
+            throw new IllegalArgumentException("Input array cannot be null");
+        }
+
+        float[][] floatArray = new float[array.length][];
+
+        for (int i = 0; i < array.length; i++) {
+
+            if (array[i] != null) {
+
+                floatArray[i] = new float[array[i].length];
+                for (int j = 0; j < array[i].length; j++) {
+                    if (array[i][j] != null) {
+                        floatArray[i][j] = array[i][j].floatValue();
+                    } else {
+                        floatArray[i][j] = Float.NaN; // Assign NaN for null values
+                    }
+                }
+            } else {
+                floatArray[i] = null; // Assign null for null sub-arrays
+            }
+
+        }
+
+        return floatArray;
+
+    }
+
     public static int countNulls(Double[][] matrix) {
 
         int count = 0;

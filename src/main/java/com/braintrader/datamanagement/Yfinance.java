@@ -26,7 +26,6 @@ import java.util.function.Consumer;
 
 public class Yfinance {
 
-    private static String PYTHON_JEP_PATH="C:\\Program Files\\Python313\\Lib\\site-packages\\jep\\jep.dll";
     private static String localDbPath = "\\data\\stockdata";
 
     private final Connection con;
@@ -39,7 +38,7 @@ public class Yfinance {
         }
 
         this.logger = logger;
-        MainInterpreter.setJepLibraryPath(PYTHON_JEP_PATH);
+        Python.setInterpreterPath();
 
         String dbPath = System.getProperty("user.dir") + localDbPath;
 
