@@ -7,6 +7,8 @@ import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseBar;
 import org.ta4j.core.BaseBarSeries;
+import org.ta4j.core.Indicator;
+import org.ta4j.core.num.Num;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -17,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class YFinanceIndicatorCalculator {
+public abstract class IndicatorCalculator {
 
     private final Yfinance yFinance;
 
@@ -26,7 +28,7 @@ public abstract class YFinanceIndicatorCalculator {
     protected final Map<LocalDate,Integer> dateToIndexMap = new HashMap<>();
     protected BarSeries series;
 
-    protected YFinanceIndicatorCalculator(Yfinance yFinance,String symbol) throws IndicatorException {
+    protected IndicatorCalculator(Yfinance yFinance, String symbol) throws IndicatorException {
 
         if (symbol == null || symbol.trim().isEmpty()) {
             throw new IndicatorException("Symbol cannot be null or empty");
@@ -90,8 +92,30 @@ public abstract class YFinanceIndicatorCalculator {
 
     }
 
-    protected Integer getIndexOfDate(LocalDate date) {
+    protected final Integer getIndexOfDate(LocalDate date) {
         return dateToIndexMap.get(date);
+    }
+
+    protected final List<IMeasure> calculateMeasure(Indicator<Num> indicator, String indicatorName) {
+
+        List<IMeasure> resultList = new ArrayList<>();
+
+        for(Map.Entry<LocalDate,Integer> entry:dateToIndexMap.entrySet()) {
+
+            Integer index = entry.getValue();
+            LocalDate date = entry.getKey();
+
+            Num value = indicator.getValue(index);
+
+            if (value!=null && !value.isNaN() && value.doubleValue()>0 ) {
+                IMeasure measure = new GeneralMeasure(symbol, indicatorName, date, value.doubleValue());
+                resultList.add(measure);
+            }
+
+        }
+
+        return resultList;
+
     }
 
 }

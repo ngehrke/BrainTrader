@@ -106,6 +106,45 @@ public class Yfinance {
 
     }
 
+    public void deleteSymbolInDatabase(String symbol) throws YfinanceException  {
+
+            if (symbol==null) {
+                return;
+            }
+
+            String sql1 = """
+                DELETE FROM price WHERE symbol = ?
+                """;
+
+            String sql2= """
+                DELETE FROM company_info WHERE symbol = ?
+                """;
+
+            String sql3 = """
+                DELETE FROM company_measure WHERE symbol = ?
+                """;
+
+            try (
+                    PreparedStatement preparedStatement = this.con.prepareStatement(sql1);
+                    PreparedStatement preparedStatement2 = this.con.prepareStatement(sql2);
+                    PreparedStatement preparedStatement3 = this.con.prepareStatement(sql3);
+            ) {
+
+                preparedStatement.setString(1, symbol);
+                preparedStatement.execute();
+
+                preparedStatement2.setString(1, symbol);
+                preparedStatement2.execute();
+
+                preparedStatement3.setString(1, symbol);
+                preparedStatement3.execute();
+
+            } catch (SQLException e) {
+                throw new YfinanceException("Error deleting symbol from database: "+e.getMessage(), e);
+            }
+
+    }
+
     public String getCompanyInfo(String symbol, String property) throws YfinanceException {
 
         if (symbol==null) {
@@ -244,17 +283,31 @@ public class Yfinance {
             throw new YfinanceException("Measures must not be null");
         }
 
+        String lastMeasure = null;
+        String lastSymbol = null;
+
+        int counter=0;
         for (IMeasure measure : measures) {
 
             try {
 
-                this.saveMeasureInDatabase(measure);
+                boolean saved = this.saveMeasureInDatabase(measure);
+
+                if (saved) {
+                    counter++;
+                    lastMeasure = measure.getMeasureName();
+                    lastSymbol = measure.getSymbol();
+                }
+
+
 
             } catch (YfinanceException e) {
                 throw new YfinanceException("Error saving measures to database: "+e.getMessage(), e);
             }
 
         }
+
+        logger.accept("Saved "+counter+" measures to database (last value: "+lastMeasure+" for symbol "+lastSymbol+")");
 
     }
 
@@ -284,8 +337,6 @@ public class Yfinance {
             preparedStatement.setDouble(4, measure.getMeasureValue());
 
             preparedStatement.execute();
-
-            logger.accept("Saved measure for "+measure);
 
             return true;
 
