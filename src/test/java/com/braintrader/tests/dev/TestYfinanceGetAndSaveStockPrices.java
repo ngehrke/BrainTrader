@@ -17,7 +17,7 @@ class TestYfinanceGetAndSaveStockPrices {
     @Test
     void testYfinance() throws YfinanceException, InterruptedException {
 
-        Map<String,String> companies = getUSInterestRates();
+        Map<String,String> companies = getIndizies();
 
         Set<String> symbols = companies.keySet();
 
@@ -38,6 +38,33 @@ class TestYfinanceGetAndSaveStockPrices {
         yFinance.close();
 
         assertTrue(true);
+
+    }
+
+    public static Map<String,String> getIndizies() {
+
+        Map<String, String> indizies = new HashMap<>();
+
+        indizies.put("^VIX", "CBOE Volatility Index");
+        indizies.put("^GSPC", "S&P 500");
+        indizies.put("^DJI", "Dow Jones Industrial Average");
+        indizies.put("^IXIC", "NASDAQ Composite");
+        indizies.put("^RUT", "Russell 2000");
+        indizies.put("^FTSE", "FTSE 100");
+        indizies.put("^GDAXI", "DAX 30");
+        indizies.put("^N225", "Nikkei 225");
+        indizies.put("^HSI", "Hang Seng Index");
+        indizies.put("^AXJO", "S&P/ASX 200");
+        indizies.put("^AORD", "All Ordinaries");
+        indizies.put("^BSESN", "BSE SENSEX");
+        indizies.put("^KS11", "KOSPI");
+        indizies.put("^STI", "Straits Times Index");
+        indizies.put("^JKSE", "Jakarta Composite Index");
+        indizies.put("^KLSE", "FTSE Bursa Malaysia KLCI");
+        indizies.put("^NZ50", "NZX 50");
+        indizies.put("^TWII", "TSEC weighted index");
+
+        return indizies;
 
     }
 

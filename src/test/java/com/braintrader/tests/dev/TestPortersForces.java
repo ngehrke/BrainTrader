@@ -111,7 +111,7 @@ class TestPortersForces {
         Für jede Force oder Kraft sollen börsennotierte Wertpapiere zugeordnet werden, die besonders gut für das analysierte Unternehmen in dieser Kraft als spezifischer Einfluss reinpasst.
         Es können ein oder mehrere Wertpapiere sein, aber mindestens eines pro Kraft.
         Wertpapiere können dabei sein: Firmen und Konzerne, Indizies oder auch Fonds wie ETF.
-        Unten ein Beispiel für das Outputformat in JSON, in dem die Firma Apple als Beispiel analysiert wird.
+        Unten ist ein Beispiel für das Outputformat in JSON, in dem die Firma Apple als Beispiel analysiert wird.
 
         Die von dir zu analysierende Firma ist: Zalando
 

@@ -105,11 +105,17 @@ public abstract class IndicatorCalculator {
             Integer index = entry.getValue();
             LocalDate date = entry.getKey();
 
-            Num value = indicator.getValue(index);
+            try {
 
-            if (value!=null && !value.isNaN() && value.doubleValue()>0 ) {
-                IMeasure measure = new GeneralMeasure(symbol, indicatorName, date, value.doubleValue());
-                resultList.add(measure);
+                Num value = indicator.getValue(index);
+
+                if (value != null && !value.isNaN() && value.doubleValue() > 0) {
+                    IMeasure measure = new GeneralMeasure(symbol, indicatorName, date, value.doubleValue());
+                    resultList.add(measure);
+                }
+
+            } catch (Exception e) {
+                // do nothing
             }
 
         }
