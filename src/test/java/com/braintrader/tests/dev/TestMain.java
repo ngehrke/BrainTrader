@@ -8,6 +8,9 @@ import com.braintrader.exceptions.BrainConnectionHandlerException;
 import com.braintrader.exceptions.GeneralBrainException;
 import com.braintrader.handler.ContractTimeSeries;
 import com.ib.client.Contract;
+import com.ib.client.Decimal;
+import com.ib.client.Order;
+import com.ib.client.OrderType;
 import com.ib.client.Types;
 import com.ib.contracts.StkContract;
 import com.ib.controller.ApiController;
@@ -46,7 +49,7 @@ class TestMain {
         Contract contract = new StkContract("AAPL");
 
         // Place an order
-        /*
+
         Order order = new Order();
         order.clientId(0);
         order.account("DUE088961");
@@ -55,7 +58,7 @@ class TestMain {
         order.orderType(OrderType.MKT);
 
         apiController.placeOrModifyOrder(contract, order, null);
-        */
+
 
         // Anfrage für Vertragsdetails
         BrainContractDetailsHandler brainContractDetailsHandler = new BrainContractDetailsHandler();

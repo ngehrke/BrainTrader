@@ -3,7 +3,6 @@ package com.braintrader.datamanagement;
 import com.braintrader.exceptions.YfinanceException;
 import com.braintrader.measures.GeneralMeasure;
 import com.braintrader.measures.IMeasure;
-import jep.MainInterpreter;
 import jep.Interpreter;
 import jep.SharedInterpreter;
 
@@ -752,6 +751,7 @@ public class Yfinance {
 
     }
 
+
     public Price getPriceFromDatabase(String symbol, LocalDate date) throws YfinanceException {
 
         if (symbol == null) {
@@ -1188,7 +1188,7 @@ public class Yfinance {
             logger.accept("Error getting latest price date for "+tickerSymbol+": "+e.getMessage());
         }
 
-        result= this.getStockPrices(tickerSymbol, lastDate, LocalDate.now());
+        result= this.getStockPricesFromYahoo(tickerSymbol, lastDate, LocalDate.now());
 
         return result;
 
@@ -1197,7 +1197,7 @@ public class Yfinance {
 
     public void getAndSaveStockPricesInDatabase(String tickerSymbol, LocalDate startDate, LocalDate endDate) throws YfinanceException {
 
-        Map<LocalDate, Price> prices = this.getStockPrices(tickerSymbol, startDate, endDate);
+        Map<LocalDate, Price> prices = this.getStockPricesFromYahoo(tickerSymbol, startDate, endDate);
         this.savePrices(prices);
 
     }
@@ -1269,7 +1269,69 @@ public class Yfinance {
 
     }
 
-    public Map<LocalDate,Price> getStockPrices(String tickerSymbol, LocalDate startDate, LocalDate endDate) throws YfinanceException  {
+    public Map<String,List<Price>> getStockPricesFromDatabaseAsList(Set<String> tickerSymbolSet, LocalDate startDate, LocalDate endDate) throws YfinanceException {
+
+            Map<String,List<Price>> result = new HashMap<>();
+
+            for (String tickerSymbol : tickerSymbolSet) {
+
+                List<Price> prices = this.getStockPricesFromDatabaseAsList(tickerSymbol, startDate, endDate);
+                result.put(tickerSymbol, prices);
+
+            }
+
+            return result;
+
+    }
+
+    public List<Price> getStockPricesFromDatabaseAsList(String tickerSymbol, LocalDate startDate, LocalDate endDate) throws YfinanceException  {
+
+        List<Price> result = new ArrayList<>();
+
+        String sql = """
+            SELECT symbol, pricedate, currency, open, close, high, low, adjClose, volume
+            FROM price
+            WHERE symbol = ? AND pricedate >= ? AND pricedate <= ?
+            ORDER BY pricedate
+            """;
+
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, tickerSymbol);
+            preparedStatement.setDate(2, java.sql.Date.valueOf(startDate));
+            preparedStatement.setDate(3, java.sql.Date.valueOf(endDate));
+
+            try (var rs = preparedStatement.executeQuery()) {
+
+                while (rs.next()) {
+
+                    Price price = new Price();
+
+                    price.symbol = rs.getString(1);
+                    price.date = rs.getDate(2).toLocalDate();
+                    price.currency = rs.getString(3);
+                    price.open = rs.getDouble(4);
+                    price.close = rs.getDouble(5);
+                    price.high = rs.getDouble(6);
+                    price.low = rs.getDouble(7);
+                    price.adjClose = rs.getDouble(8);
+                    price.volume = rs.getLong(9);
+
+                    result.add(price);
+
+                }
+
+            }
+
+        } catch (SQLException e) {
+            throw new YfinanceException("Error getting stock prices from database: "+e.getMessage(), e);
+        }
+
+        return result;
+
+    }
+
+    public Map<LocalDate,Price> getStockPricesFromYahoo(String tickerSymbol, LocalDate startDate, LocalDate endDate) throws YfinanceException  {
 
         Map<LocalDate,Price> result = new HashMap<>();
 
