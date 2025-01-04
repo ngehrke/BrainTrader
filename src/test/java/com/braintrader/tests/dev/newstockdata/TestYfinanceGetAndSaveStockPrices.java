@@ -1,4 +1,4 @@
-package com.braintrader.tests.dev;
+package com.braintrader.tests.dev.newstockdata;
 
 import com.braintrader.datamanagement.Yfinance;
 import com.braintrader.exceptions.YfinanceException;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class TestYfinanceGetAndSaveStockPrices {
+public class TestYfinanceGetAndSaveStockPrices {
 
     @Test
     void testYfinance() throws YfinanceException, InterruptedException {

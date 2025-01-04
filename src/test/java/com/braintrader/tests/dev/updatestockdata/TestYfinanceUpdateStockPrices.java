@@ -1,4 +1,4 @@
-package com.braintrader.tests.dev;
+package com.braintrader.tests.dev.updatestockdata;
 
 import com.braintrader.datamanagement.Yfinance;
 import com.braintrader.exceptions.YfinanceException;
@@ -6,14 +6,14 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class TestYfinanceUpdateStockInfo {
+class TestYfinanceUpdateStockPrices {
 
     @Test
-    void testGetAndSaveInfo() throws YfinanceException {
+    void testUpdateStockPrices() throws YfinanceException {
 
         Yfinance yFinance = new Yfinance(System.out::println);
 
-        yFinance.updateAllStockInfosInDatabase();
+        yFinance.updateAllStockPricesInDatabase();
 
         yFinance.close();
 

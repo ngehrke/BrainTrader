@@ -2,6 +2,7 @@ package com.braintrader.tests.dev;
 
 import com.braintrader.datamanagement.Yfinance;
 import com.braintrader.exceptions.YfinanceException;
+import com.braintrader.tests.dev.newstockdata.TestYfinanceGetAndSaveStockPrices;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
