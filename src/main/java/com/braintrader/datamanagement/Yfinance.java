@@ -899,7 +899,7 @@ public class Yfinance {
 
         try (Statement statement = this.con.createStatement()) {
 
-            statement.execute("SHUTDOWN COMPACT");
+            statement.execute("SHUTDOWN");
 
             if (!con.isClosed()) {
                 con.close();

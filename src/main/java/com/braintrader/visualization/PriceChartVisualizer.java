@@ -106,7 +106,7 @@ public class PriceChartVisualizer {
 
             for (Price price : thePriceList) {
 
-                if (price.getBuySignal() > 0) { // Nur wenn buySignal > 0
+                if (price.getBuySignal() > 0 || price.getSellSignal() > 0 ) { // Nur wenn buySignal > 0
 
                     LocalDate date = price.getDate();
 
@@ -118,11 +118,19 @@ public class PriceChartVisualizer {
                         double yValue = price.getClose();
 
                         // Punktform erstellen (z. B. kleiner roter Kreis)
-                        double ySize = price.getBuySignal();
+                        double ySize = Math.max(price.getBuySignal(),price.getSellSignal())*10;
+
+                        Color color=Color.BLACK;
+
+                        if (price.getBuySignal()>0.0 && price.getSellSignal()==0.0) {
+                            color=Color.MAGENTA;
+                        } else if (price.getBuySignal()==0.0 && price.getSellSignal()>0.0) {
+                            color=Color.getHSBColor(0.33f, 1.0f, 0.4f);
+                        }
 
                         XYShapeAnnotation annotation = new XYShapeAnnotation(
                                 new Ellipse2D.Double(xValue, yValue - ySize/2, 1, ySize),
-                                new BasicStroke(1.0f), Color.BLACK, Color.BLACK
+                                new BasicStroke(1.0f), color, color
                         );
 
                         // Füge die Annotation dem Plot hinzu

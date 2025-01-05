@@ -3,14 +3,14 @@ package com.braintrader.optimalsignals;
 import lombok.Getter;
 
 @Getter
-public class Transaction {
+public class OptimalTransaction {
 
     private final int buyDay;
     private final int sellDay;
     private final double buyPrice;
     private final double sellPrice;
 
-    public Transaction(int buyDay, int sellDay, double buyPrice, double sellPrice) {
+    public OptimalTransaction(int buyDay, int sellDay, double buyPrice, double sellPrice) {
 
         this.buyDay = buyDay;
         this.sellDay = sellDay;
@@ -26,6 +26,7 @@ public class Transaction {
     public double getProfitPercentage() {
         return (sellPrice - buyPrice) / buyPrice;
     }
+
 
     @Override
     public String toString() {

@@ -1,5 +1,7 @@
 package com.braintrader.datamanagement;
 
+import com.braintrader.measures.GeneralMeasure;
+import com.braintrader.measures.IMeasure;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,11 +21,11 @@ public class Price {
     protected Double adjClose;
     protected Long volume;
 
+    @Setter
     protected double buySignal=0;
+    @Setter
     protected double sellSignal=0;
 
-    @Setter
-    protected int dayNumber=0;
 
     public double getMedianPrice() {
         return (high + low) / 2;
@@ -31,6 +33,18 @@ public class Price {
 
     public double getAveragePrice() {
         return (open + close + high + low) / 4;
+    }
+
+    public IMeasure getOptimalBuySignalMeasure() {
+
+        return new GeneralMeasure(symbol, "OptimalBuySignal", date, this.buySignal);
+
+    }
+
+    public IMeasure getOptimalSellSignalMeasure() {
+
+        return new GeneralMeasure(symbol, "OptimalSellSignal", date, this.sellSignal);
+
     }
 
     @Override

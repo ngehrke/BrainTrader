@@ -57,10 +57,9 @@ class TestDataMatrix {
         System.out.println("x:\n"+ Arrays.deepToString(x));
         System.out.println("xCat:\n"+ Arrays.deepToString(xCat));
 
-        /*
-        CatboostTrainer trainer = new CatboostTrainer(y, x, xCat, dataModelManager.getRhsMeasureColumnNames(), dataModelManager.getRhsCategoryColumnNames());
 
         String modelPath = "model.cbm";
+        CatboostTrainer trainer = new CatboostTrainer(y, x, xCat, dataModelManager.getRhsMeasureColumnNames(), dataModelManager.getRhsCategoryColumnNames());
         trainer.trainModel(modelPath, 0.8);
 
         // Example: Making predictions
@@ -69,13 +68,13 @@ class TestDataMatrix {
         float[][] xFloat = DataModelManager.convertToFloatArray(x);
         CatBoostPredictions predictions = model.predict(xFloat,xCat);
 
-        System.out.println("Predictions: " + predictions.get(0, 0));
+        for(int i=0; i<xFloat.length; i++){
+            System.out.println("Prediction for row "+i+": "+predictions.get(i,0)+", true value: "+y[i]);
+        }
 
         model.close();
-        */
 
         yFinance.close();
-
         assertTrue(true);
 
     }
