@@ -22,12 +22,12 @@ class TestVisualization {
         Yfinance yFinance = new Yfinance(System.out::println);
 
         Set<String> symbol = Set.of("AAPL");
-        LocalDate startDate = LocalDate.of(2024, 1, 1);
+        LocalDate startDate = LocalDate.of(2010, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 12, 31);
 
         Map<String, List<Price>> prices = yFinance.getStockPricesFromDatabaseAsList(symbol, startDate, endDate);
         OptimalStockProfitCalculator optimalStockProfitCalculator = new OptimalStockProfitCalculator(prices.get("AAPL"));
-        optimalStockProfitCalculator.calculateSignals(20,0,0);
+        optimalStockProfitCalculator.calculateSignals(100,0,0);
 
         PriceChartVisualizer priceChartVisualizer = new PriceChartVisualizer(prices);
 

@@ -22,13 +22,13 @@ class TestOptimalSignals {
         Yfinance yFinance = new Yfinance(System.out::println);
 
         Set<String> symbol = Set.of("AAPL");
-        LocalDate startDate = LocalDate.of(2024, 1, 1);
+        LocalDate startDate = LocalDate.of(2000, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 12, 31);
 
         Map<String, List<Price>> prices = yFinance.getStockPricesFromDatabaseAsList(symbol, startDate, endDate);
         OptimalStockProfitCalculator optimalStockProfitCalculator = new OptimalStockProfitCalculator(prices.get("AAPL"));
 
-        for(int i=1;i<30;i++) {
+        for(int i=1;i<100;i++) {
             OptimalResult optimalResult = optimalStockProfitCalculator.calculateSignals(i,0.0005,1);
             System.out.println("Number of transactions: "+i+", profit: "+ optimalResult.getMaxProfit()+", avg profit: "+optimalResult.getAverageProfit());
         }
