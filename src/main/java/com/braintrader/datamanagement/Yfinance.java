@@ -1188,10 +1188,13 @@ public class Yfinance {
             logger.accept("Error getting latest price date for "+tickerSymbol+": "+e.getMessage());
         }
 
+        if (lastDate==null) {
+            return result;
+        }
+
         result= this.getStockPricesFromYahoo(tickerSymbol, lastDate, LocalDate.now());
 
         return result;
-
 
     }
 

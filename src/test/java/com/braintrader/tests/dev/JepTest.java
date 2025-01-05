@@ -17,7 +17,7 @@ class JepTest {
     @Test
     void testJep() {
 
-        MainInterpreter.setJepLibraryPath("C:\\Program Files\\Python313\\Lib\\site-packages\\jep\\jep.dll");
+        MainInterpreter.setJepLibraryPath("C:\\Program Files\\Python312\\Lib\\site-packages\\jep\\jep.dll");
 
         // Ticker-Symbol der gewünschten Aktie
         String tickerSymbol = "AAPL"; // Beispiel: Apple Inc.
