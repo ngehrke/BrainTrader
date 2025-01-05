@@ -34,6 +34,7 @@ public class OptimalStockProfitCalculator {
 
     }
 
+    // TODO: nicht den absoluten Profit, sondern den prozentualen Profit als Grundlage für die zu wählenden Transaktionen verwenden
     public static OptimalResult maxProfitWithTransactions(double[] prices, int K, double transactionCostPercentage, double fixTransactionCost) {
 
         int T = prices.length;
@@ -83,7 +84,5 @@ public class OptimalStockProfitCalculator {
         return new OptimalResult(dp[K][T - 1], transactions[K][T - 1]);
 
     }
-
-
 
 }
