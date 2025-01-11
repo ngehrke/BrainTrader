@@ -15,18 +15,18 @@ public class OptimalStockProfitCalculator {
 
     }
 
-    public OptimalResult calculateSignals(int numberOfTransactions, double transactionCostPercentage,double fixTransactionCost) {
+    public OptimalResult calculateSignals(int numberOfTransactions) {
 
         double[] prices = priceList.stream().mapToDouble(Price::getClose).toArray();
-        OptimalResult optimalResult = maxProfitWithTransactions(prices, numberOfTransactions,transactionCostPercentage,fixTransactionCost);
+        OptimalResult optimalResult = maxProfitWithTransactions(prices, numberOfTransactions);
 
         for(OptimalTransaction optimalTransaction : optimalResult.getTransactions()) {
 
             Price priceBuy = priceList.get(optimalTransaction.getBuyDay());
             Price priceSell = priceList.get(optimalTransaction.getSellDay());
 
-            priceBuy.setBuySignal(optimalTransaction.getProfitPercentage());
-            priceSell.setSellSignal(optimalTransaction.getProfitPercentage());
+            priceBuy.setBuySignal(optimalTransaction.getProfit());
+            priceSell.setSellSignal(optimalTransaction.getProfit());
 
         }
 
@@ -34,8 +34,7 @@ public class OptimalStockProfitCalculator {
 
     }
 
-    // TODO: nicht den absoluten Profit, sondern den prozentualen Profit als Grundlage für die zu wählenden Transaktionen verwenden
-    public static OptimalResult maxProfitWithTransactions(double[] prices, int K, double transactionCostPercentage, double fixTransactionCost) {
+    public static OptimalResult maxProfitWithTransactions(double[] prices, int K) {
 
         int T = prices.length;
         if (T == 0 || K == 0) {
@@ -55,17 +54,19 @@ public class OptimalStockProfitCalculator {
 
         for (int k = 1; k <= K; k++) {
 
-            double maxDiff = -prices[0] * (1 + transactionCostPercentage)-fixTransactionCost; // Adjusted for transaction cost
+            double maxDiff = -prices[0];
             int buyDay = 0;
 
             for (int i = 1; i < T; i++) {
+
                 // Option 1: No transaction on day i
                 dp[k][i] = dp[k][i - 1];
                 transactions[k][i] = new ArrayList<>(transactions[k][i - 1]);
 
                 // Option 2: Sell on day i
-                double sellPrice = prices[i] * (1 - transactionCostPercentage)-fixTransactionCost; // Selling with transaction cost
+                double sellPrice = prices[i] ;
                 double potentialProfit = sellPrice + maxDiff;
+
                 if (potentialProfit > dp[k][i]) {
                     dp[k][i] = potentialProfit;
                     transactions[k][i] = new ArrayList<>(transactions[k - 1][buyDay]);
@@ -73,12 +74,14 @@ public class OptimalStockProfitCalculator {
                 }
 
                 // Update maxDiff for the next day
-                double buyPrice = prices[i] * (1 + transactionCostPercentage)+fixTransactionCost; // Buying with transaction cost
+                double buyPrice = prices[i] ;
                 if (dp[k - 1][i] - buyPrice > maxDiff) {
                     maxDiff = dp[k - 1][i] - buyPrice;
                     buyDay = i;
                 }
+
             }
+
         }
 
         return new OptimalResult(dp[K][T - 1], transactions[K][T - 1]);

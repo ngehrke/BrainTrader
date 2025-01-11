@@ -3,6 +3,7 @@ package com.braintrader.tests.dev;
 import com.braintrader.datamanagement.Price;
 import com.braintrader.datamanagement.Yfinance;
 import com.braintrader.exceptions.YfinanceException;
+import com.braintrader.optimalsignals.OptimalResult;
 import com.braintrader.optimalsignals.OptimalStockProfitCalculator;
 import com.braintrader.visualization.PriceChartVisualizer;
 import org.junit.jupiter.api.Test;
@@ -26,8 +27,13 @@ class TestVisualization {
         LocalDate endDate = LocalDate.of(2024, 12, 31);
 
         Map<String, List<Price>> prices = yFinance.getStockPricesFromDatabaseAsList(symbol, startDate, endDate);
+
+        prices.get("AAPL").forEach(Price::logPrices);
+
         OptimalStockProfitCalculator optimalStockProfitCalculator = new OptimalStockProfitCalculator(prices.get("AAPL"));
-        optimalStockProfitCalculator.calculateSignals(100,0,0);
+        OptimalResult result = optimalStockProfitCalculator.calculateSignals(500);
+
+        System.out.println("profit: "+ result.getMaxProfit()+", avg profit: "+result.getAverageProfit());
 
         PriceChartVisualizer priceChartVisualizer = new PriceChartVisualizer(prices);
 

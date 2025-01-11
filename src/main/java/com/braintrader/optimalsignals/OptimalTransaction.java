@@ -23,10 +23,6 @@ public class OptimalTransaction {
         return sellPrice - buyPrice;
     }
 
-    public double getProfitPercentage() {
-        return (sellPrice - buyPrice) / buyPrice;
-    }
-
 
     @Override
     public String toString() {

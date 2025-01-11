@@ -29,7 +29,7 @@ class TestOptimalSignals {
         OptimalStockProfitCalculator optimalStockProfitCalculator = new OptimalStockProfitCalculator(prices.get("AAPL"));
 
         for(int i=1;i<100;i++) {
-            OptimalResult optimalResult = optimalStockProfitCalculator.calculateSignals(i,0.0005,1);
+            OptimalResult optimalResult = optimalStockProfitCalculator.calculateSignals(i);
             System.out.println("Number of transactions: "+i+", profit: "+ optimalResult.getMaxProfit()+", avg profit: "+optimalResult.getAverageProfit());
         }
 
