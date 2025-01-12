@@ -1,6 +1,7 @@
 package com.braintrader.optimalsignals;
 
 import com.braintrader.datamanagement.Price;
+import com.braintrader.optimalsignals.pricetransformations.StandardPriceTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +9,15 @@ import java.util.List;
 public class OptimalStockProfitCalculator {
 
     private final List<Price> priceList;
+    private final StandardPriceTransformer priceTransformer;
 
-    public OptimalStockProfitCalculator(List<Price> priceList) {
+    public OptimalStockProfitCalculator(List<Price> priceList, StandardPriceTransformer priceTransformer) {
 
+        if (priceTransformer==null) {
+            priceTransformer=new StandardPriceTransformer();
+        }
+
+        this.priceTransformer = priceTransformer;
         this.priceList = priceList;
 
     }
@@ -34,7 +41,8 @@ public class OptimalStockProfitCalculator {
 
     }
 
-    public static OptimalResult maxProfitWithTransactions(double[] prices, int K) {
+    private OptimalResult maxProfitWithTransactions(double[] prices, int K) {
+
 
         int T = prices.length;
         if (T == 0 || K == 0) {
@@ -54,7 +62,7 @@ public class OptimalStockProfitCalculator {
 
         for (int k = 1; k <= K; k++) {
 
-            double maxDiff = -prices[0];
+            double maxDiff = -getBuyPrice(prices[0],this.priceTransformer); // buy price
             int buyDay = 0;
 
             for (int i = 1; i < T; i++) {
@@ -64,17 +72,17 @@ public class OptimalStockProfitCalculator {
                 transactions[k][i] = new ArrayList<>(transactions[k][i - 1]);
 
                 // Option 2: Sell on day i
-                double sellPrice = prices[i] ;
+                double sellPrice = getSellPrice(prices[i],this.priceTransformer) ; // sell price
                 double potentialProfit = sellPrice + maxDiff;
 
                 if (potentialProfit > dp[k][i]) {
                     dp[k][i] = potentialProfit;
                     transactions[k][i] = new ArrayList<>(transactions[k - 1][buyDay]);
-                    transactions[k][i].add(new OptimalTransaction(buyDay, i, prices[buyDay], prices[i]));
+                    transactions[k][i].add(new OptimalTransaction(buyDay, i, getBuyPrice(prices[buyDay],this.priceTransformer), getSellPrice(prices[i],this.priceTransformer) ));
                 }
 
                 // Update maxDiff for the next day
-                double buyPrice = prices[i] ;
+                double buyPrice = getBuyPrice(prices[i],this.priceTransformer) ; // buy price
                 if (dp[k - 1][i] - buyPrice > maxDiff) {
                     maxDiff = dp[k - 1][i] - buyPrice;
                     buyDay = i;
@@ -87,5 +95,14 @@ public class OptimalStockProfitCalculator {
         return new OptimalResult(dp[K][T - 1], transactions[K][T - 1]);
 
     }
+
+    private static double getBuyPrice(double price, StandardPriceTransformer priceTransformer) {
+        return priceTransformer.getBuyPrice(price);
+    }
+
+    private static double getSellPrice(double price, StandardPriceTransformer priceTransformer) {
+        return priceTransformer.getSellPrice(price);
+    }
+
 
 }
